@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="30">
+    <meta http-equiv="refresh" content="60">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHCP Leases</title>
     <style>
@@ -11,14 +11,15 @@
         .search-container { margin-bottom: 1.5em; }
         #searchBox { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; vertical-align: middle; }
         thead { background-color: #337ab7; color: #ffffff; }
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr:hover { background-color: #f1f1f1; }
-        .ping-btn { padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; background-color: #f0f0f0; border-radius: 4px; }
-        .ping-btn:hover { background-color: #e0e0e0; }
-        #pingResult { margin-top: 20px; padding: 15px; background-color: #2b2b2b; color: #f0f0f0; border-radius: 5px; white-space: pre-wrap; font-family: monospace; display: none; }
         .footer { margin-top: 2em; font-size: 0.8em; color: #777; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-checking { background-color: #ffc107; }
     </style>
 </head>
 <body>
@@ -35,15 +36,13 @@
                 <th>MAC Address</th>
                 <th>Hostname</th>
                 <th>Lease Expiry</th>
-                <th>Action</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
             <!--LEASE_ROWS-->
         </tbody>
     </table>
-    
-    <pre id="pingResult"></pre>
 
     <div class="footer">
         Last updated: <!--LAST_UPDATED-->
@@ -72,27 +71,30 @@
         }
     }
 
-    function pingIp(ip) {
-        var resultDiv = document.getElementById("pingResult");
-        resultDiv.style.display = 'block';
-        resultDiv.textContent = 'Pinging ' + ip + '...';
-
-        fetch('/api/ping/' + ip)
+    function checkStatus(ip, statusCell) {
+        fetch('/api/status/' + ip)
             .then(response => response.json())
             .then(data => {
-                var output = "--- Ping Results for " + data.ip + "---\n\n";
-                if (data.output) {
-                    output += data.output;
+                if (data.status === 'online') {
+                    statusCell.innerHTML = '<span class="status-dot status-online"></span>Online';
+                } else {
+                    statusCell.innerHTML = '<span class="status-dot status-offline"></span>Offline';
                 }
-                if (data.error) {
-                    output += "\n--- Errors ---\n" + data.error;
-                }
-                resultDiv.textContent = output;
             })
-            .catch(error => {
-                resultDiv.textContent = 'Error calling ping API: ' + error;
+            .catch(() => {
+                statusCell.innerHTML = '<span class="status-dot status-offline"></span>Error';
             });
     }
+
+    function checkAllStatuses() {
+        const statusCells = document.querySelectorAll('[data-ip]');
+        statusCells.forEach(cell => {
+            const ip = cell.getAttribute('data-ip');
+            checkStatus(ip, cell);
+        });
+    }
+
+    window.addEventListener('load', checkAllStatuses);
     </script>
 
 </body>

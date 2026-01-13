@@ -40,7 +40,7 @@ def main():
                 <td>{lease['mac']}</td>
                 <td>{lease['hostname']}</td>
                 <td>{lease['expiry']}</td>
-                <td><button class="ping-btn" onclick="pingIp('{lease['ip']}')">Ping</button></td>
+                <td data-ip="{lease['ip']}"><span class="status-dot status-checking"></span>Checking...</td>
             </tr>"""
     
     # Step 2: Read the template file
