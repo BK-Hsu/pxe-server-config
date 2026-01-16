@@ -1,0 +1,2 @@
+#!ipxe
+chain http://${next-server}/pxe/boot.ipxe

@@ -1,0 +1,51 @@
+#!ipxe
+
+set server_ip ${next-server}
+set menu-timeout 5000
+set default ubuntu22
+
+:start
+menu PXE Boot Menu
+#item win2019  Install Windows Server 2019
+item ubuntu2205 Ubuntu 22.04.5 Live Server (PXE)
+item ubuntu22 Install Ubuntu 22.04 Desktop (NFS)
+#item ubuntu20 Install Ubuntu 20.04 Desktop (ISO)
+#item shell    Drop to iPXE shell
+choose --timeout ${menu-timeout} --default ${default} selected || goto start
+goto ${selected}
+
+#:ubuntu22
+#set iso_url http://${server_ip}/iso/ubuntu-22.04-desktop-amd64.iso
+#kernel http://${server_ip}/pxe/ubuntu22/casper/vmlinuz boot=casper ip=dhcp url=${iso_url} maybe-ubiquity
+#initrd http://${server_ip}/pxe/ubuntu22/casper/initrd
+#boot
+
+:ubuntu22
+kernel http://192.168.1.1/pxe/ubuntu22/casper/vmlinuz ip=dhcp boot=casper netboot=nfs nfsroot=192.168.1.1:/srv/nfs/ubuntu22 console=ttyS0,115200 ---
+initrd http://192.168.1.1/pxe/ubuntu22/casper/initrd
+boot
+
+
+:ubuntu2205
+kernel http://192.168.1.1/pxe/ubuntu2205/casper/vmlinuz ip=dhcp boot=casper netboot=nfs nfsroot=192.168.1.1:/srv/nfs/ubuntu2205 console=ttyS0,115200 ---
+initrd http://192.168.1.1/pxe/ubuntu2205/casper/initrd
+boot
+
+
+:ubuntu20
+set iso_url http://${server_ip}/iso/ubuntu-20.04.4-desktop-amd64.iso
+kernel http://${server_ip}/pxe/ubuntu20/casper/vmlinuz boot=casper ip=dhcp url=${iso_url} maybe-ubiquity
+initrd http://${server_ip}/pxe/ubuntu20/casper/initrd
+boot
+
+:win2019
+set base_url http://${server_ip}/pxe
+kernel ${base_url}/winboot/wimboot
+initrd ${base_url}/windows/bootmgr bootmgr
+initrd ${base_url}/windows/boot/bcd BCD
+initrd ${base_url}/windows/boot/boot.sdi boot.sdi
+initrd ${base_url}/windows/sources/boot.wim boot.wim
+boot
+
+:shell
+shell
