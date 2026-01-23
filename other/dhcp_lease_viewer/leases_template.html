@@ -33,6 +33,7 @@
         <thead>
             <tr>
                 <th>IP Address</th>
+                <th>Lease Start</th>
                 <th>MAC Address</th>
                 <th>Hostname</th>
                 <th>Lease Expiry</th>
@@ -72,7 +73,7 @@
     }
 
     function checkStatus(ip, statusCell) {
-        fetch('/api/status/' + ip)
+        fetch('http://' + window.location.hostname + ':5000/api/status/' + ip)
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'online') {

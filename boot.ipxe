@@ -8,6 +8,8 @@ echo If this fails, please check the URL below.
 # You must replace it with the correct path to your OS installer's
 # .efi file, served over HTTP.
 # =================================================================
-chain --autofree http://192.168.1.1/ubuntu-installer/EFI/boot/grubx64.efi
+kernel http://192.168.1.1/ubuntu-installer/casper/vmlinuz ip=dhcp url=http://192.168.1.1/ubuntu-installer/ quiet ---
+initrd http://192.168.1.1/ubuntu-installer/casper/initrd
+boot
 
 boot

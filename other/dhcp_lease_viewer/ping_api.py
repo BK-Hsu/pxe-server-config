@@ -1,38 +1,50 @@
 #!/usr/bin/env python3
 from flask import Flask, jsonify
+from flask_cors import CORS
 import subprocess
 import re
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for the entire app
 
 def is_valid_ip(ip):
     """Basic validation for an IP address."""
-    return re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip)
+    return re.match(r"^[0-9a-fA-F:.]+$", ip)
 
 @app.route('/api/status/<ip_address>')
 def get_status(ip_address):
     if not is_valid_ip(ip_address):
         return jsonify({"status": "invalid"}), 400
 
-    # Security: Ensure the IP is on the same subnet to prevent abuse
-    if not ip_address.startswith('192.168.1.'):
-        return jsonify({"status": "disallowed"}), 403
-
+    # --- Method 1: Try to ping (ICMP) ---
     try:
-        # Using -c 1 for a single ping and -W 1 for a 1-second timeout.
-        result = subprocess.run(
-            ['ping', '-c', '1', '-W', '1', ip_address],
-            capture_output=True, # stdout and stderr are suppressed
-            timeout=2  # A total timeout for the command
-        )
+        ping_command = ['ping', '-c', '1', '-W', '1', ip_address]
+        if ':' in ip_address:
+            ping_command = ['ping', '-6', '-c', '1', '-W', '1', ip_address]
+        
+        result = subprocess.run(ping_command, capture_output=True, timeout=1.5)
         if result.returncode == 0:
             return jsonify({"status": "online"})
-        else:
-            return jsonify({"status": "offline"})
-    except subprocess.TimeoutExpired:
-        return jsonify({"status": "offline"})
-    except Exception:
-        return jsonify({"status": "error"})
+    except (subprocess.TimeoutExpired, Exception):
+        # Ping failed, proceed to nc check
+        pass
+
+    # --- Method 2: Try to check common TCP ports if ping fails ---
+    ports_to_check = [22, 80, 443]
+    for port in ports_to_check:
+        try:
+            nc_command = ['nc', '-vz', '-w', '1', ip_address, str(port)]
+            # nc's output for success/failure is on stderr
+            result = subprocess.run(nc_command, capture_output=True, timeout=1.5)
+            # A successful connection will have "succeeded" in stderr
+            if "succeeded" in result.stderr.decode().lower():
+                return jsonify({"status": "online"})
+        except (subprocess.TimeoutExpired, Exception):
+            # nc command failed, try next port
+            continue
+
+    # If all methods fail, return offline
+    return jsonify({"status": "offline"})
 
 if __name__ == '__main__':
     # Listen on all interfaces on port 5000
