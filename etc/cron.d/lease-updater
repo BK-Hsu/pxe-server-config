@@ -1,0 +1,2 @@
+# Cron job to update the DHCP leases HTML page
+* * * * * root /usr/bin/python3 /usr/local/bin/generate_lease_html.py > /dev/null 2>&1

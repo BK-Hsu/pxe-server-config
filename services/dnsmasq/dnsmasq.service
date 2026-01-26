@@ -1,0 +1,22 @@
+[Unit]
+Description=dnsmasq - A lightweight DHCP and caching DNS server
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=dnsmasq
+Group=nogroup
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+
+# Test the config file
+ExecStartPre=/usr/sbin/dnsmasq --test
+
+# Start the daemon
+ExecStart=/usr/sbin/dnsmasq --conf-file=/etc/dnsmasq.conf --keep-in-foreground
+
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
